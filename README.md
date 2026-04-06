@@ -1,6 +1,6 @@
 # Task Tracker
 
-A simple Flutter task tracker app built with `GetX`, local persistence, API-based status filters, and light/dark theme support.
+A simple Flutter task tracker app built with `GetX`, Hive-based task persistence, API-based status filters, and light/dark theme support.
 
 ## Architecture Overview
 
@@ -84,8 +84,8 @@ lib/
 Example:
 
 - `AddTaskPage` is the View
-- `AddTaskController` is the ViewModel
-- `TaskRepository` handles local task storage
+- `AddTaskController` is the ViewModel and owns add/edit form state
+- `TaskRepository` handles local task storage in Hive
 - `TaskModel` defines the task data structure
 
 ## SOLID Principles In This Project
@@ -105,12 +105,20 @@ This project follows some SOLID ideas, but in a simple form.
 - Task list
 - Add task
 - Edit task
+- Required title and description validation on add/edit
 - Task details
 - Delete confirmation
 - Search
 - Status filter from API
-- Local persistence with `get_storage`
+- Local task persistence with `Hive`
+- Legacy task migration from `GetStorage` to `Hive` on first read
 - Light and dark theme toggle
+
+## Persistence
+
+- Tasks are stored locally in `Hive`
+- Theme preference is still stored in `GetStorage`
+- Existing tasks previously saved in `GetStorage` are migrated into Hive automatically when tasks are first loaded
 
 ## How To Run
 
@@ -143,6 +151,7 @@ dart run build_runner build --delete-conflicting-outputs
 
 - add more unit tests for controllers and repositories
 - replace raw status strings with stronger typed constants or enums
+- consider moving theme persistence to Hive as well for a single storage approach
 - add better API error handling and failure models
 - add a settings page for theme and preferences
 - add a service layer if business logic grows
