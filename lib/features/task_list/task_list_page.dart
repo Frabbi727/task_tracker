@@ -93,9 +93,39 @@ class TaskListPage extends GetView<TaskListController> {
               if (controller.statusError.value.isNotEmpty) {
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(controller.statusError.value),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.error.withValues(alpha: 0.22),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.wifi_off_outlined,
+                          color: colorScheme.error,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            controller.statusError.value,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onErrorContainer,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: controller.loadStatuses,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }

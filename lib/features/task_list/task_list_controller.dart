@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
 import '../../core/models/task_model.dart';
@@ -54,9 +55,14 @@ class TaskListController extends GetxController {
     try {
       final items = await _statusRepository.fetchStatuses();
       statuses.assignAll(items);
+    } on DioException {
+      statuses.clear();
+      statusError.value =
+          'Unable to load status filters. Check your connection and try again.';
     } catch (_) {
       statuses.clear();
-      statusError.value = 'Unable to load statuses.';
+      statusError.value =
+          'Unable to load status filters. Check your connection and try again.';
     } finally {
       isStatusLoading.value = false;
     }
