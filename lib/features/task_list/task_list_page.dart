@@ -12,10 +12,11 @@ class TaskListPage extends GetView<TaskListController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final themeController = Get.find<ThemeController>();
     final iconColor =
-        Theme.of(context).appBarTheme.foregroundColor ??
-        Theme.of(context).colorScheme.onSurface;
+        theme.appBarTheme.foregroundColor ?? colorScheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,16 +41,43 @@ class TaskListPage extends GetView<TaskListController> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              onChanged: controller.updateSearchQuery,
-              decoration: const InputDecoration(
-                hintText: 'Search tasks',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+            Text(
+              'Track work with clearer priorities, categories, and status.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
+            TextField(
+              onChanged: controller.updateSearchQuery,
+              decoration: InputDecoration(
+                hintText: 'Search by title or description',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.55,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 1.4,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            const SizedBox(height: 18),
             Obx(
               () => TaskFilterSection(
                 filters: controller.availableFilters,
@@ -86,9 +114,39 @@ class TaskListPage extends GetView<TaskListController> {
                 final tasks = controller.filteredTasks;
 
                 if (tasks.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No tasks found. Add a new task to get started.',
+                  return Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: colorScheme.outlineVariant),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.inbox_outlined,
+                            size: 36,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No tasks found',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Try a different search or add a new task to get started.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }

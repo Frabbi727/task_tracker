@@ -12,6 +12,7 @@ import 'package:task_tracker/core/models/task_model.dart';
 import 'package:task_tracker/features/add_task/add_task_controller.dart';
 import 'package:task_tracker/features/add_task/add_task_page.dart';
 import 'package:task_tracker/features/repositories/task_repository.dart';
+import 'package:task_tracker/utils/widgets/task_card.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -193,6 +194,32 @@ void main() {
 
       expect(controller.themeMode.value, ThemeMode.dark);
       expect(storage.read<String>('theme_mode'), ThemeMode.dark.name);
+    });
+  });
+
+  group('TaskCard', () {
+    testWidgets('renders priority and category on the task card', (tester) async {
+      final task = TaskModel(
+        id: 'card-1',
+        title: 'Prepare proposal',
+        description: 'Review scope and budget',
+        date: DateTime(2026, 4, 6),
+        priority: 'High',
+        status: 'PENDING',
+        category: TaskCategory.clientVisit,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TaskCard(task: task, onTap: () {}),
+          ),
+        ),
+      );
+
+      expect(find.text('High'), findsOneWidget);
+      expect(find.text('Client Visit'), findsNWidgets(2));
+      expect(find.text('Prepare proposal'), findsOneWidget);
     });
   });
 }
