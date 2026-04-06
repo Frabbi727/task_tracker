@@ -103,11 +103,6 @@ class TaskCard extends StatelessWidget {
                       tone: priorityTone,
                     ),
                     _Pill(
-                      icon: Icons.folder_open_outlined,
-                      label: task.category.label,
-                      tone: categoryTone,
-                    ),
-                    _Pill(
                       icon: Icons.calendar_today_outlined,
                       label: _formatDate(task.date),
                       tone: dueTone,

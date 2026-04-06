@@ -218,7 +218,7 @@ void main() {
       );
 
       expect(find.text('High'), findsOneWidget);
-      expect(find.text('Client Visit'), findsNWidgets(2));
+      expect(find.text('Client Visit'), findsOneWidget);
       expect(find.text('Prepare proposal'), findsOneWidget);
     });
   });
