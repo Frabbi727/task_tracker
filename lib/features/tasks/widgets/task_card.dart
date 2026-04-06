@@ -12,6 +12,7 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCompleted = task.status == 'COMPLETED';
     final statusColor = isCompleted ? Colors.green : Colors.orange;
+    final priorityColor = _priorityColor(task.priority);
 
     return Card(
       child: InkWell(
@@ -38,20 +39,18 @@ class TaskCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                task.description.isEmpty ? 'No description' : task.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  Chip(label: Text(task.category.label)),
-                  Chip(label: Text(task.status)),
                   Chip(label: Text(_formatDate(task.date))),
+                  Chip(
+                    label: Text(task.priority),
+                    backgroundColor: priorityColor.withValues(alpha: 0.12),
+                    side: BorderSide(color: priorityColor),
+                  ),
+                  Chip(label: Text(task.status)),
                 ],
               ),
             ],
@@ -65,5 +64,17 @@ class TaskCard extends StatelessWidget {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '${date.year}-$month-$day';
+  }
+
+  Color _priorityColor(String priority) {
+    switch (priority) {
+      case 'High':
+        return Colors.red;
+      case 'Low':
+        return Colors.green;
+      case 'Medium':
+      default:
+        return Colors.orange;
+    }
   }
 }

@@ -1,5 +1,7 @@
 enum TaskCategory { general, clientVisit }
 
+enum TaskPriority { low, medium, high }
+
 extension TaskCategoryX on TaskCategory {
   String get value {
     switch (this) {
@@ -27,12 +29,33 @@ extension TaskCategoryX on TaskCategory {
   }
 }
 
+extension TaskPriorityX on TaskPriority {
+  String get value {
+    switch (this) {
+      case TaskPriority.low:
+        return 'Low';
+      case TaskPriority.medium:
+        return 'Medium';
+      case TaskPriority.high:
+        return 'High';
+    }
+  }
+
+  static TaskPriority fromValue(String? value) {
+    return TaskPriority.values.firstWhere(
+      (priority) => priority.value == value,
+      orElse: () => TaskPriority.medium,
+    );
+  }
+}
+
 class TaskModel {
   TaskModel({
     required this.id,
     required this.title,
     required this.description,
     required this.date,
+    required this.priority,
     required this.status,
     required this.category,
   });
@@ -41,6 +64,7 @@ class TaskModel {
   final String title;
   final String description;
   final DateTime date;
+  final String priority;
   final String status;
   final TaskCategory category;
 
@@ -49,6 +73,7 @@ class TaskModel {
     String? title,
     String? description,
     DateTime? date,
+    String? priority,
     String? status,
     TaskCategory? category,
   }) {
@@ -57,6 +82,7 @@ class TaskModel {
       title: title ?? this.title,
       description: description ?? this.description,
       date: date ?? this.date,
+      priority: priority ?? this.priority,
       status: status ?? this.status,
       category: category ?? this.category,
     );
@@ -68,6 +94,7 @@ class TaskModel {
       'title': title,
       'description': description,
       'date': date.toIso8601String(),
+      'priority': priority,
       'status': status,
       'category': category.value,
     };
@@ -82,6 +109,7 @@ class TaskModel {
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+      priority: json['priority'] as String? ?? TaskPriority.medium.value,
       status:
           storedStatus ??
           ((legacyCompleted ?? false) ? 'COMPLETED' : 'PENDING'),

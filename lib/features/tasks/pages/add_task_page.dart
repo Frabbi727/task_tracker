@@ -19,6 +19,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   TaskModel? _existingTask;
   DateTime _selectedDate = DateTime.now();
+  TaskPriority _selectedPriority = TaskPriority.medium;
   TaskCategory _selectedCategory = TaskCategory.general;
 
   bool get _isEditMode => _existingTask != null;
@@ -40,6 +41,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     _titleController.text = task.title;
     _descriptionController.text = task.description;
     _selectedDate = task.date;
+    _selectedPriority = TaskPriorityX.fromValue(task.priority);
     _selectedCategory = task.category;
   }
 
@@ -76,6 +78,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         date: _selectedDate,
+        priority: _selectedPriority.value,
         category: _selectedCategory,
       );
     } else {
@@ -83,6 +86,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         date: _selectedDate,
+        priority: _selectedPriority.value,
         category: _selectedCategory,
       );
     }
@@ -141,6 +145,30 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   subtitle: Text(_formatDate(_selectedDate)),
                   trailing: const Icon(Icons.calendar_month),
                   onTap: _pickDate,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<TaskPriority>(
+                  initialValue: _selectedPriority,
+                  decoration: const InputDecoration(
+                    labelText: 'Priority',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: TaskPriority.values
+                      .map(
+                        (priority) => DropdownMenuItem<TaskPriority>(
+                          value: priority,
+                          child: Text(priority.value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _selectedPriority = value;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<TaskCategory>(

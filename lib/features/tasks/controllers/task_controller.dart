@@ -51,6 +51,7 @@ class TaskController extends GetxController {
     required String title,
     required String description,
     required DateTime date,
+    required String priority,
     required TaskCategory category,
   }) async {
     final task = TaskModel(
@@ -58,6 +59,7 @@ class TaskController extends GetxController {
       title: title,
       description: description,
       date: date,
+      priority: priority,
       status: 'PENDING',
       category: category,
     );
@@ -71,6 +73,7 @@ class TaskController extends GetxController {
     required String title,
     required String description,
     required DateTime date,
+    required String priority,
     required TaskCategory category,
   }) async {
     final index = tasks.indexWhere((task) => task.id == taskId);
@@ -83,6 +86,7 @@ class TaskController extends GetxController {
       title: title,
       description: description,
       date: date,
+      priority: priority,
       category: category,
     );
     tasks.refresh();

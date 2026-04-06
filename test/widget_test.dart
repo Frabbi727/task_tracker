@@ -32,6 +32,19 @@ void main() {
 
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (methodCall) async {
+            if (methodCall.method == 'getApplicationDocumentsDirectory') {
+              final directory = await Directory.systemTemp.createTemp(
+                'task_test',
+              );
+              return directory.path;
+            }
+            return null;
+          });
+    });
+
+    tearDownAll(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, null);
     });
 
@@ -44,6 +57,7 @@ void main() {
           title: 'Client meeting',
           description: 'Visit client office',
           date: DateTime(2026, 4, 6),
+          priority: 'High',
           status: 'PENDING',
           category: TaskCategory.clientVisit,
         ),
@@ -54,8 +68,22 @@ void main() {
 
       expect(loadedTasks, hasLength(1));
       expect(loadedTasks.first.title, 'Client meeting');
+      expect(loadedTasks.first.priority, 'High');
       expect(loadedTasks.first.status, 'PENDING');
       expect(loadedTasks.first.category, TaskCategory.clientVisit);
+    });
+
+    test('loads legacy task without priority using default value', () {
+      final task = TaskModel.fromJson({
+        'id': '2',
+        'title': 'Old task',
+        'description': 'Saved before priority existed',
+        'date': '2026-04-06T00:00:00.000',
+        'status': 'PENDING',
+        'category': 'general',
+      });
+
+      expect(task.priority, 'Medium');
     });
 
     test('parses status response json', () {
