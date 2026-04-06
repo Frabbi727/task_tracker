@@ -78,12 +78,19 @@ class AddTaskPage extends GetView<AddTaskController> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
+                    key: const Key('task_description_field'),
                     controller: controller.descriptionController,
                     maxLines: 4,
                     decoration: const InputDecoration(
                       labelText: 'Description',
                       border: OutlineInputBorder(),
                     ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Description is required';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   ListTile(

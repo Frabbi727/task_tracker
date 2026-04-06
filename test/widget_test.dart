@@ -150,21 +150,44 @@ void main() {
       expect(find.text(today), findsOneWidget);
     });
 
-    testWidgets('shows validation error when title is empty', (tester) async {
+    testWidgets('shows validation errors when required fields are empty', (
+      tester,
+    ) async {
       await tester.pumpWidget(const GetMaterialApp(home: AddTaskPage()));
 
       await tester.tap(find.byKey(const Key('task_save_button')));
       await tester.pumpAndSettle();
 
       expect(find.text('Title is required'), findsOneWidget);
+      expect(find.text('Description is required'), findsOneWidget);
     });
 
-    test('saves with valid title and empty description', () async {
+    testWidgets('shows validation error when description is whitespace only', (
+      tester,
+    ) async {
+      await tester.pumpWidget(const GetMaterialApp(home: AddTaskPage()));
+
+      await tester.enterText(
+        find.byKey(const Key('task_title_field')),
+        'New task',
+      );
+      await tester.enterText(
+        find.byKey(const Key('task_description_field')),
+        '   ',
+      );
+
+      await tester.tap(find.byKey(const Key('task_save_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Description is required'), findsOneWidget);
+    });
+
+    test('saves with valid title and description', () async {
       final controller = Get.find<AddTaskController>();
 
       await controller.addTask(
         title: 'New task',
-        description: '',
+        description: 'Review the new client requirements',
         date: DateTime.now(),
         priority: 'Medium',
         category: TaskCategory.general,
@@ -173,7 +196,7 @@ void main() {
       final tasks = repository.loadTasks();
       expect(tasks, hasLength(1));
       expect(tasks.first.title, 'New task');
-      expect(tasks.first.description, isEmpty);
+      expect(tasks.first.description, 'Review the new client requirements');
       expect(tasks.first.priority, 'Medium');
       expect(tasks.first.category, TaskCategory.general);
     });
