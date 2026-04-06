@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../app/controllers/theme_controller.dart';
 import '../../utils/widgets/task_card.dart';
 import '../../utils/widgets/task_filter_section.dart';
 import 'task_list_controller.dart';
@@ -11,8 +12,27 @@ class TaskListPage extends GetView<TaskListController> {
 
   @override
   Widget build(BuildContext context) {
+    final themeController = Get.find<ThemeController>();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Task List')),
+      appBar: AppBar(
+        title: const Text('Task List'),
+        actions: [
+          Obx(
+            () => IconButton(
+              onPressed: themeController.toggleTheme,
+              icon: Icon(
+                themeController.isDarkMode
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+              ),
+              tooltip: themeController.isDarkMode
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode',
+            ),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import 'package:task_tracker/app/controllers/theme_controller.dart';
 import 'package:task_tracker/core/models/status_response.dart';
 import 'package:task_tracker/core/models/task_model.dart';
 import 'package:task_tracker/features/add_task/add_task_controller.dart';
@@ -174,6 +175,24 @@ void main() {
       expect(tasks.first.description, isEmpty);
       expect(tasks.first.priority, 'Medium');
       expect(tasks.first.category, TaskCategory.general);
+    });
+  });
+
+  group('ThemeController', () {
+    test('defaults to light mode and persists dark mode toggle', () async {
+      await GetStorage.init('theme_box');
+      final storage = GetStorage('theme_box');
+      await storage.erase();
+
+      final controller = ThemeController(storage);
+      controller.onInit();
+
+      expect(controller.themeMode.value, ThemeMode.light);
+
+      controller.toggleTheme();
+
+      expect(controller.themeMode.value, ThemeMode.dark);
+      expect(storage.read<String>('theme_mode'), ThemeMode.dark.name);
     });
   });
 }
