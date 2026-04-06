@@ -18,7 +18,7 @@ class TaskCard extends StatelessWidget {
     final categoryTone = _categoryTone(task.category);
     final dueTone = _neutralTone(colorScheme);
     final description = task.description.trim().isEmpty
-        ? 'No description added'
+        ? '_'
         : task.description.trim();
 
     return Material(
