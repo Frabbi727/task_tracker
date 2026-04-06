@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:hive/hive.dart';
 
 import 'package:task_tracker/app/controllers/theme_controller.dart';
+import 'package:task_tracker/core/constants/storage_keys.dart';
 import 'package:task_tracker/core/models/status_response.dart';
 import 'package:task_tracker/core/models/task_model.dart';
 import 'package:task_tracker/features/add_task/add_task_controller.dart';
@@ -20,6 +22,8 @@ void main() {
   Get.testMode = true;
 
   group('TaskRepository', () {
+    late Box<dynamic> taskBox;
+
     setUp(() async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (methodCall) async {
@@ -35,9 +39,15 @@ void main() {
       await GetStorage.init('test_box');
       final storage = GetStorage('test_box');
       await storage.erase();
+      final hiveDirectory = await Directory.systemTemp.createTemp('hive_test');
+      Hive.init(hiveDirectory.path);
+      taskBox = await Hive.openBox<dynamic>(
+        'task_box_${DateTime.now().microsecondsSinceEpoch}',
+      );
     });
 
-    tearDown(() {
+    tearDown(() async {
+      await taskBox.close();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (methodCall) async {
             if (methodCall.method == 'getApplicationDocumentsDirectory') {
@@ -51,7 +61,7 @@ void main() {
     });
 
     test('saves and loads tasks from local storage', () async {
-      final repository = TaskRepositoryTestable();
+      final repository = TaskRepositoryTestable(taskBox);
 
       final tasks = [
         TaskModel(
@@ -73,6 +83,31 @@ void main() {
       expect(loadedTasks.first.priority, 'High');
       expect(loadedTasks.first.status, 'PENDING');
       expect(loadedTasks.first.category, TaskCategory.clientVisit);
+    });
+
+    test('migrates legacy get storage tasks into hive', () async {
+      final legacyStorage = GetStorage('test_box');
+      await legacyStorage.write(StorageKeys.tasks, [
+        {
+          'id': 'legacy-1',
+          'title': 'Legacy task',
+          'description': 'Migrated from GetStorage',
+          'date': '2026-04-06T00:00:00.000',
+          'priority': 'Low',
+          'status': 'PENDING',
+          'category': 'general',
+        },
+      ]);
+      final repository = TaskRepositoryTestable(
+        taskBox,
+        legacyStorage: legacyStorage,
+      );
+
+      final loadedTasks = repository.loadTasks();
+
+      expect(loadedTasks, hasLength(1));
+      expect(loadedTasks.first.title, 'Legacy task');
+      expect(taskBox.get(StorageKeys.tasks), isA<List>());
     });
 
     test('loads legacy task without priority using default value', () {
@@ -105,6 +140,7 @@ void main() {
 
   group('AddTaskPage', () {
     late TaskRepositoryTestable repository;
+    late Box<dynamic> taskBox;
 
     setUp(() async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -120,12 +156,18 @@ void main() {
 
       await GetStorage.init('test_box');
       await GetStorage('test_box').erase();
+      final hiveDirectory = await Directory.systemTemp.createTemp('hive_test');
+      Hive.init(hiveDirectory.path);
+      taskBox = await Hive.openBox<dynamic>(
+        'task_box_${DateTime.now().microsecondsSinceEpoch}',
+      );
       Get.reset();
-      repository = TaskRepositoryTestable();
+      repository = TaskRepositoryTestable(taskBox);
       Get.put<AddTaskController>(AddTaskController(repository));
     });
 
-    tearDown(() {
+    tearDown(() async {
+      await taskBox.close();
       Get.reset();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (methodCall) async {
@@ -248,7 +290,10 @@ void main() {
 }
 
 class TaskRepositoryTestable extends TaskRepository {
-  TaskRepositoryTestable() : super.test(GetStorage('test_box'));
+  TaskRepositoryTestable(
+    Box<dynamic> box, {
+    GetStorage? legacyStorage,
+  }) : super.test(box, legacyStorage: legacyStorage);
 }
 
 String _formatDate(DateTime date) {

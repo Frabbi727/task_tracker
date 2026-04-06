@@ -1,27 +1,55 @@
 import 'package:get_storage/get_storage.dart';
+import 'package:hive/hive.dart';
 
 import '../../../core/constants/storage_keys.dart';
 import '../../core/models/task_model.dart';
 
 class TaskRepository {
-  TaskRepository([GetStorage? storage]) : _storage = storage ?? GetStorage();
+  TaskRepository(
+    Box<dynamic> box, {
+    GetStorage? legacyStorage,
+  }) : _box = box,
+       _legacyStorage = legacyStorage ?? GetStorage();
 
-  TaskRepository.test(GetStorage storage) : _storage = storage;
+  TaskRepository.test(
+    Box<dynamic> box, {
+    GetStorage? legacyStorage,
+  }) : _box = box,
+       _legacyStorage = legacyStorage ?? GetStorage();
 
-  final GetStorage _storage;
+  final Box<dynamic> _box;
+  final GetStorage _legacyStorage;
 
   List<TaskModel> loadTasks() {
-    final rawTasks =
-        _storage.read<List<dynamic>>(StorageKeys.tasks) ?? <dynamic>[];
+    final rawTasks = _box.get(StorageKeys.tasks) ?? _migrateLegacyTasksIfNeeded();
+
+    if (rawTasks is! List) {
+      return <TaskModel>[];
+    }
 
     return rawTasks
-        .whereType<Map<dynamic, dynamic>>()
+        .whereType<Map>()
         .map((task) => TaskModel.fromJson(Map<String, dynamic>.from(task)))
         .toList();
   }
 
   Future<void> saveTasks(List<TaskModel> tasks) {
     final payload = tasks.map((task) => task.toJson()).toList();
-    return _storage.write(StorageKeys.tasks, payload);
+    return _box.put(StorageKeys.tasks, payload);
+  }
+
+  List<dynamic>? _migrateLegacyTasksIfNeeded() {
+    if (_box.containsKey(StorageKeys.tasks)) {
+      return null;
+    }
+
+    final legacyTasks =
+        _legacyStorage.read<List<dynamic>>(StorageKeys.tasks) ?? <dynamic>[];
+    if (legacyTasks.isEmpty) {
+      return null;
+    }
+
+    _box.put(StorageKeys.tasks, legacyTasks);
+    return legacyTasks;
   }
 }
