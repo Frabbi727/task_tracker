@@ -17,8 +17,31 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final _descriptionController = TextEditingController();
   final TaskController _taskController = Get.find<TaskController>();
 
+  TaskModel? _existingTask;
   DateTime _selectedDate = DateTime.now();
   TaskCategory _selectedCategory = TaskCategory.general;
+
+  bool get _isEditMode => _existingTask != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final taskId = Get.arguments as String?;
+    if (taskId == null) {
+      return;
+    }
+
+    final task = _taskController.findTaskById(taskId);
+    if (task == null) {
+      return;
+    }
+
+    _existingTask = task;
+    _titleController.text = task.title;
+    _descriptionController.text = task.description;
+    _selectedDate = task.date;
+    _selectedCategory = task.category;
+  }
 
   @override
   void dispose() {
@@ -47,12 +70,22 @@ class _AddTaskPageState extends State<AddTaskPage> {
       return;
     }
 
-    await _taskController.addTask(
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      date: _selectedDate,
-      category: _selectedCategory,
-    );
+    if (_isEditMode) {
+      await _taskController.updateTask(
+        taskId: _existingTask!.id,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        date: _selectedDate,
+        category: _selectedCategory,
+      );
+    } else {
+      await _taskController.addTask(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        date: _selectedDate,
+        category: _selectedCategory,
+      );
+    }
 
     if (!mounted) {
       return;
@@ -61,7 +94,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     Get.back();
     Get.snackbar(
       'Success',
-      'Task saved locally.',
+      _isEditMode ? 'Task updated locally.' : 'Task saved locally.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
@@ -69,77 +102,80 @@ class _AddTaskPageState extends State<AddTaskPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Task')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
+      appBar: AppBar(title: Text(_isEditMode ? 'Edit Task' : 'Add Task')),
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Title',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Title is required';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Title is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Task Date'),
-                subtitle: Text(_formatDate(_selectedDate)),
-                trailing: const Icon(Icons.calendar_month),
-                onTap: _pickDate,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<TaskCategory>(
-                initialValue: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Task Date'),
+                  subtitle: Text(_formatDate(_selectedDate)),
+                  trailing: const Icon(Icons.calendar_month),
+                  onTap: _pickDate,
                 ),
-                items: TaskCategory.values
-                    .map(
-                      (category) => DropdownMenuItem<TaskCategory>(
-                        value: category,
-                        child: Text(category.label),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _saveTask,
-                  child: const Text('Save Task'),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<TaskCategory>(
+                  initialValue: _selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: TaskCategory.values
+                      .map(
+                        (category) => DropdownMenuItem<TaskCategory>(
+                          value: category,
+                          child: Text(category.label),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _selectedCategory = value;
+                    });
+                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _saveTask,
+                    child: Text(_isEditMode ? 'Update Task' : 'Save Task'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

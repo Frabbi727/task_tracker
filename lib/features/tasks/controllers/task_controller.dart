@@ -78,6 +78,29 @@ class TaskController extends GetxController {
     await _persistTasks();
   }
 
+  Future<void> updateTask({
+    required String taskId,
+    required String title,
+    required String description,
+    required DateTime date,
+    required TaskCategory category,
+  }) async {
+    final index = tasks.indexWhere((task) => task.id == taskId);
+    if (index == -1) {
+      return;
+    }
+
+    final task = tasks[index];
+    tasks[index] = task.copyWith(
+      title: title,
+      description: description,
+      date: date,
+      category: category,
+    );
+    tasks.refresh();
+    await _persistTasks();
+  }
+
   Future<void> toggleTaskStatus(String taskId) async {
     final index = tasks.indexWhere((task) => task.id == taskId);
     if (index == -1) {

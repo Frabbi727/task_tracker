@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../controllers/task_controller.dart';
 import '../models/task_model.dart';
 
@@ -23,7 +24,17 @@ class TaskDetailsPage extends GetView<TaskController> {
       }
 
       return Scaffold(
-        appBar: AppBar(title: const Text('Task Details')),
+        appBar: AppBar(
+          title: const Text('Task Details'),
+          actions: [
+            IconButton(
+              onPressed: () =>
+                  Get.toNamed(AppRoutes.addTask, arguments: task.id),
+              icon: const Icon(Icons.edit),
+              tooltip: 'Edit task',
+            ),
+          ],
+        ),
         body: SafeArea(
           top: false,
           child: Padding(
@@ -73,6 +84,32 @@ class TaskDetailsPage extends GetView<TaskController> {
                   child: FilledButton(
                     style: FilledButton.styleFrom(backgroundColor: Colors.red),
                     onPressed: () async {
+                      final shouldDelete = await Get.dialog<bool>(
+                        AlertDialog(
+                          title: const Text('Delete Task'),
+                          content: const Text(
+                            'Are you sure you want to delete this task?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(result: false),
+                              child: const Text('Cancel'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Get.back(result: true),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (shouldDelete != true) {
+                        return;
+                      }
+
                       await controller.deleteTask(task.id);
                       Get.back();
                       Get.snackbar(
