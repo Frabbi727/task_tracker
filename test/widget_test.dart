@@ -1,30 +1,63 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_storage/get_storage.dart';
 
-import 'package:task_tracker/main.dart';
+import 'package:task_tracker/features/tasks/models/task_model.dart';
+import 'package:task_tracker/features/tasks/repositories/task_repository.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const channel = MethodChannel('plugins.flutter.io/path_provider');
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  group('TaskRepository', () {
+    setUp(() async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (methodCall) async {
+            if (methodCall.method == 'getApplicationDocumentsDirectory') {
+              final directory = await Directory.systemTemp.createTemp(
+                'task_test',
+              );
+              return directory.path;
+            }
+            return null;
+          });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      await GetStorage.init('test_box');
+      final storage = GetStorage('test_box');
+      await storage.erase();
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    test('saves and loads tasks from local storage', () async {
+      final repository = TaskRepositoryTestable();
+
+      final tasks = [
+        TaskModel(
+          id: '1',
+          title: 'Client meeting',
+          description: 'Visit client office',
+          date: DateTime(2026, 4, 6),
+          isCompleted: false,
+          category: TaskCategory.clientVisit,
+        ),
+      ];
+
+      await repository.saveTasks(tasks);
+      final loadedTasks = repository.loadTasks();
+
+      expect(loadedTasks, hasLength(1));
+      expect(loadedTasks.first.title, 'Client meeting');
+      expect(loadedTasks.first.category, TaskCategory.clientVisit);
+    });
   });
+}
+
+class TaskRepositoryTestable extends TaskRepository {
+  TaskRepositoryTestable() : super.test(GetStorage('test_box'));
 }
