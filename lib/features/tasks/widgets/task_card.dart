@@ -10,7 +10,8 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = task.isCompleted ? Colors.green : Colors.orange;
+    final isCompleted = task.status == 'COMPLETED';
+    final statusColor = isCompleted ? Colors.green : Colors.orange;
 
     return Card(
       child: InkWell(
@@ -30,7 +31,7 @@ class TaskCard extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    task.isCompleted
+                    isCompleted
                         ? Icons.check_circle
                         : Icons.radio_button_unchecked,
                     color: statusColor,
@@ -49,7 +50,7 @@ class TaskCard extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   Chip(label: Text(task.category.label)),
-                  Chip(label: Text(task.isCompleted ? 'Completed' : 'Pending')),
+                  Chip(label: Text(task.status)),
                   Chip(label: Text(_formatDate(task.date))),
                 ],
               ),

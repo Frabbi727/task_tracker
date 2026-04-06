@@ -1,33 +1,23 @@
 import 'package:get/get.dart';
 
 import '../models/task_model.dart';
+import '../repositories/status_repository.dart';
 import '../repositories/task_repository.dart';
 
-enum TaskFilter { all, pending, completed, clientVisit }
-
-extension TaskFilterX on TaskFilter {
-  String get label {
-    switch (this) {
-      case TaskFilter.all:
-        return 'All';
-      case TaskFilter.pending:
-        return 'Pending';
-      case TaskFilter.completed:
-        return 'Completed';
-      case TaskFilter.clientVisit:
-        return 'Client Visit';
-    }
-  }
-}
-
 class TaskController extends GetxController {
-  TaskController(this._repository);
+  TaskController(this._repository, this._statusRepository);
 
   final TaskRepository _repository;
+  final StatusRepository _statusRepository;
 
   final tasks = <TaskModel>[].obs;
+  final statuses = <String>[].obs;
   final searchQuery = ''.obs;
-  final selectedFilter = TaskFilter.all.obs;
+  final selectedStatusFilter = 'All'.obs;
+  final isStatusLoading = false.obs;
+  final statusError = ''.obs;
+
+  List<String> get availableFilters => ['All', ...statuses];
 
   List<TaskModel> get filteredTasks {
     final query = searchQuery.value.trim().toLowerCase();
@@ -38,12 +28,9 @@ class TaskController extends GetxController {
           task.title.toLowerCase().contains(query) ||
           task.description.toLowerCase().contains(query);
 
-      final matchesFilter = switch (selectedFilter.value) {
-        TaskFilter.all => true,
-        TaskFilter.pending => !task.isCompleted,
-        TaskFilter.completed => task.isCompleted,
-        TaskFilter.clientVisit => task.category == TaskCategory.clientVisit,
-      };
+      final matchesFilter =
+          selectedStatusFilter.value == 'All' ||
+          task.status == selectedStatusFilter.value;
 
       return matchesQuery && matchesFilter;
     }).toList()..sort((a, b) => a.date.compareTo(b.date));
@@ -53,6 +40,7 @@ class TaskController extends GetxController {
   void onInit() {
     super.onInit();
     loadTasks();
+    loadStatuses();
   }
 
   void loadTasks() {
@@ -70,7 +58,7 @@ class TaskController extends GetxController {
       title: title,
       description: description,
       date: date,
-      isCompleted: false,
+      status: 'PENDING',
       category: category,
     );
 
@@ -108,7 +96,9 @@ class TaskController extends GetxController {
     }
 
     final task = tasks[index];
-    tasks[index] = task.copyWith(isCompleted: !task.isCompleted);
+    tasks[index] = task.copyWith(
+      status: task.status == 'COMPLETED' ? 'PENDING' : 'COMPLETED',
+    );
     tasks.refresh();
     await _persistTasks();
   }
@@ -122,8 +112,23 @@ class TaskController extends GetxController {
     searchQuery.value = value;
   }
 
-  void updateFilter(TaskFilter filter) {
-    selectedFilter.value = filter;
+  Future<void> loadStatuses() async {
+    isStatusLoading.value = true;
+    statusError.value = '';
+
+    try {
+      final items = await _statusRepository.fetchStatuses();
+      statuses.assignAll(items);
+    } catch (_) {
+      statuses.clear();
+      statusError.value = 'Unable to load statuses.';
+    } finally {
+      isStatusLoading.value = false;
+    }
+  }
+
+  void updateStatusFilter(String value) {
+    selectedStatusFilter.value = value;
   }
 
   TaskModel? findTaskById(String id) {

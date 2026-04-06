@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_storage/get_storage.dart';
 
+import 'package:task_tracker/features/tasks/models/status_response.dart';
 import 'package:task_tracker/features/tasks/models/task_model.dart';
 import 'package:task_tracker/features/tasks/repositories/task_repository.dart';
 
@@ -43,7 +44,7 @@ void main() {
           title: 'Client meeting',
           description: 'Visit client office',
           date: DateTime(2026, 4, 6),
-          isCompleted: false,
+          status: 'PENDING',
           category: TaskCategory.clientVisit,
         ),
       ];
@@ -53,7 +54,22 @@ void main() {
 
       expect(loadedTasks, hasLength(1));
       expect(loadedTasks.first.title, 'Client meeting');
+      expect(loadedTasks.first.status, 'PENDING');
       expect(loadedTasks.first.category, TaskCategory.clientVisit);
+    });
+
+    test('parses status response json', () {
+      final response = StatusResponse.fromJson({
+        'success': true,
+        'code': 'TR200',
+        'message': 'Statuses retrieved successfully',
+        'data': {
+          'statuses': ['PENDING', 'COMPLETED'],
+        },
+      });
+
+      expect(response.success, isTrue);
+      expect(response.data.statuses, ['PENDING', 'COMPLETED']);
     });
   });
 }

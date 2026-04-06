@@ -33,7 +33,7 @@ class TaskModel {
     required this.title,
     required this.description,
     required this.date,
-    required this.isCompleted,
+    required this.status,
     required this.category,
   });
 
@@ -41,7 +41,7 @@ class TaskModel {
   final String title;
   final String description;
   final DateTime date;
-  final bool isCompleted;
+  final String status;
   final TaskCategory category;
 
   TaskModel copyWith({
@@ -49,7 +49,7 @@ class TaskModel {
     String? title,
     String? description,
     DateTime? date,
-    bool? isCompleted,
+    String? status,
     TaskCategory? category,
   }) {
     return TaskModel(
@@ -57,7 +57,7 @@ class TaskModel {
       title: title ?? this.title,
       description: description ?? this.description,
       date: date ?? this.date,
-      isCompleted: isCompleted ?? this.isCompleted,
+      status: status ?? this.status,
       category: category ?? this.category,
     );
   }
@@ -68,18 +68,23 @@ class TaskModel {
       'title': title,
       'description': description,
       'date': date.toIso8601String(),
-      'isCompleted': isCompleted,
+      'status': status,
       'category': category.value,
     };
   }
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
+    final storedStatus = json['status'] as String?;
+    final legacyCompleted = json['isCompleted'] as bool?;
+
     return TaskModel(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
-      isCompleted: json['isCompleted'] as bool? ?? false,
+      status:
+          storedStatus ??
+          ((legacyCompleted ?? false) ? 'COMPLETED' : 'PENDING'),
       category: TaskCategoryX.fromValue(json['category'] as String?),
     );
   }

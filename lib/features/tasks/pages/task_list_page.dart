@@ -28,10 +28,34 @@ class TaskListPage extends GetView<TaskController> {
             const SizedBox(height: 16),
             Obx(
               () => TaskFilterSection(
-                selectedFilter: controller.selectedFilter.value,
-                onSelected: controller.updateFilter,
+                filters: controller.availableFilters,
+                selectedFilter: controller.selectedStatusFilter.value,
+                onSelected: controller.updateStatusFilter,
               ),
             ),
+            Obx(() {
+              if (controller.isStatusLoading.value) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Loading status filters...'),
+                  ),
+                );
+              }
+
+              if (controller.statusError.value.isNotEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(controller.statusError.value),
+                  ),
+                );
+              }
+
+              return const SizedBox.shrink();
+            }),
             const SizedBox(height: 16),
             Expanded(
               child: Obx(() {

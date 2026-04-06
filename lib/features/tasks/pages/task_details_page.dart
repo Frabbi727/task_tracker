@@ -49,10 +49,7 @@ class TaskDetailsPage extends GetView<TaskController> {
                 const SizedBox(height: 16),
                 _DetailRow(label: 'Category', value: task.category.label),
                 const SizedBox(height: 8),
-                _DetailRow(
-                  label: 'Status',
-                  value: task.isCompleted ? 'Completed' : 'Pending',
-                ),
+                _DetailRow(label: 'Status', value: task.status),
                 const SizedBox(height: 8),
                 _DetailRow(label: 'Date', value: _formatDate(task.date)),
                 const SizedBox(height: 16),
@@ -72,7 +69,7 @@ class TaskDetailsPage extends GetView<TaskController> {
                   child: FilledButton.tonal(
                     onPressed: () => controller.toggleTaskStatus(task.id),
                     child: Text(
-                      task.isCompleted
+                      task.status == 'COMPLETED'
                           ? 'Mark as Pending'
                           : 'Mark as Completed',
                     ),
