@@ -18,7 +18,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final TaskController _taskController = Get.find<TaskController>();
 
   TaskModel? _existingTask;
-  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedDate = _dateOnly(DateTime.now());
   TaskPriority _selectedPriority = TaskPriority.medium;
   TaskCategory _selectedCategory = TaskCategory.general;
 
@@ -40,7 +40,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     _existingTask = task;
     _titleController.text = task.title;
     _descriptionController.text = task.description;
-    _selectedDate = task.date;
+    _selectedDate = _dateOnly(task.date);
     _selectedPriority = TaskPriorityX.fromValue(task.priority);
     _selectedCategory = task.category;
   }
@@ -62,7 +62,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
     if (pickedDate != null) {
       setState(() {
-        _selectedDate = pickedDate;
+        _selectedDate = _dateOnly(pickedDate);
       });
     }
   }
@@ -96,11 +96,13 @@ class _AddTaskPageState extends State<AddTaskPage> {
     }
 
     Get.back();
-    Get.snackbar(
-      'Success',
-      _isEditMode ? 'Task updated locally.' : 'Task saved locally.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    if (!Get.testMode) {
+      Get.snackbar(
+        'Success',
+        _isEditMode ? 'Task updated locally.' : 'Task saved locally.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   @override
@@ -113,10 +115,12 @@ class _AddTaskPageState extends State<AddTaskPage> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextFormField(
+                  key: const Key('task_title_field'),
                   controller: _titleController,
                   decoration: const InputDecoration(
                     labelText: 'Title',
@@ -140,6 +144,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 ),
                 const SizedBox(height: 16),
                 ListTile(
+                  key: const Key('task_date_tile'),
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Task Date'),
                   subtitle: Text(_formatDate(_selectedDate)),
@@ -198,6 +203,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
+                    key: const Key('task_save_button'),
                     onPressed: _saveTask,
                     child: Text(_isEditMode ? 'Update Task' : 'Save Task'),
                   ),
@@ -214,5 +220,9 @@ class _AddTaskPageState extends State<AddTaskPage> {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '${date.year}-$month-$day';
+  }
+
+  static DateTime _dateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 }
