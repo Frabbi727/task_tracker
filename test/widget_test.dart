@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hive/hive.dart';
@@ -13,7 +14,10 @@ import 'package:task_tracker/core/models/status_response.dart';
 import 'package:task_tracker/core/models/task_model.dart';
 import 'package:task_tracker/features/add_task/add_task_controller.dart';
 import 'package:task_tracker/features/add_task/add_task_page.dart';
+import 'package:task_tracker/features/repositories/status_repository.dart';
 import 'package:task_tracker/features/repositories/task_repository.dart';
+import 'package:task_tracker/features/task_list/task_list_controller.dart';
+import 'package:task_tracker/features/task_list/task_list_page.dart';
 import 'package:task_tracker/utils/widgets/task_card.dart';
 
 void main() {
@@ -262,6 +266,119 @@ void main() {
     });
   });
 
+  group('TaskListController', () {
+    late Box<dynamic> taskBox;
+    late TaskRepositoryTestable repository;
+
+    setUp(() async {
+      await GetStorage.init('test_box');
+      await GetStorage('test_box').erase();
+      final hiveDirectory = await Directory.systemTemp.createTemp('hive_test');
+      Hive.init(hiveDirectory.path);
+      taskBox = await Hive.openBox<dynamic>(
+        'task_box_${DateTime.now().microsecondsSinceEpoch}',
+      );
+      repository = TaskRepositoryTestable(taskBox);
+    });
+
+    tearDown(() async {
+      await taskBox.close();
+    });
+
+    test('loads statuses successfully and clears any error', () async {
+      final statusRepository = FakeStatusRepository(statusesToReturn: [
+        'PENDING',
+        'COMPLETED',
+      ]);
+      final controller = TaskListController(repository, statusRepository);
+
+      await controller.loadStatuses();
+
+      expect(controller.statuses, ['PENDING', 'COMPLETED']);
+      expect(controller.statusError.value, isEmpty);
+      expect(controller.availableFilters, ['All', 'PENDING', 'COMPLETED']);
+    });
+
+    test('sets retryable error state when status loading fails', () async {
+      final statusRepository = FakeStatusRepository(
+        dioException: DioException(
+          requestOptions: RequestOptions(path: '/status'),
+        ),
+      );
+      final controller = TaskListController(repository, statusRepository);
+
+      await controller.loadStatuses();
+
+      expect(controller.statuses, isEmpty);
+      expect(
+        controller.statusError.value,
+        'Unable to load status filters. Check your connection and try again.',
+      );
+      expect(controller.availableFilters, ['All']);
+    });
+  });
+
+  group('TaskListPage', () {
+    late Box<dynamic> taskBox;
+    late TaskRepositoryTestable repository;
+    late FakeStatusRepository statusRepository;
+
+    setUp(() async {
+      await GetStorage.init('test_box');
+      await GetStorage('test_box').erase();
+      final hiveDirectory = await Directory.systemTemp.createTemp('hive_test');
+      Hive.init(hiveDirectory.path);
+      taskBox = await Hive.openBox<dynamic>(
+        'task_box_${DateTime.now().microsecondsSinceEpoch}',
+      );
+      repository = TaskRepositoryTestable(taskBox);
+      statusRepository = FakeStatusRepository(
+        dioException: DioException(
+          requestOptions: RequestOptions(path: '/status'),
+        ),
+      );
+
+      Get.reset();
+      Get.put<ThemeController>(ThemeController(GetStorage('test_box')));
+      Get.put<TaskListController>(
+        TaskListController(repository, statusRepository),
+      );
+    });
+
+    tearDown(() async {
+      await taskBox.close();
+      Get.reset();
+    });
+
+    testWidgets('shows inline retry UI when status loading fails', (
+      tester,
+    ) async {
+      await tester.pumpWidget(const GetMaterialApp(home: TaskListPage()));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Unable to load status filters. Check your connection and try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('retry button triggers another status load attempt', (
+      tester,
+    ) async {
+      await tester.pumpWidget(const GetMaterialApp(home: TaskListPage()));
+      await tester.pumpAndSettle();
+
+      final previousCalls = statusRepository.fetchCallCount;
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(statusRepository.fetchCallCount, previousCalls + 1);
+    });
+  });
+
   group('TaskCard', () {
     testWidgets('renders priority and category on the task card', (tester) async {
       final task = TaskModel(
@@ -294,6 +411,27 @@ class TaskRepositoryTestable extends TaskRepository {
     Box<dynamic> box, {
     GetStorage? legacyStorage,
   }) : super.test(box, legacyStorage: legacyStorage);
+}
+
+class FakeStatusRepository extends StatusRepository {
+  FakeStatusRepository({
+    List<String>? statusesToReturn,
+    this.dioException,
+  }) : _statusesToReturn = statusesToReturn ?? <String>[],
+       super(Dio());
+
+  final List<String> _statusesToReturn;
+  final DioException? dioException;
+  int fetchCallCount = 0;
+
+  @override
+  Future<List<String>> fetchStatuses() async {
+    fetchCallCount += 1;
+    if (dioException != null) {
+      throw dioException!;
+    }
+    return _statusesToReturn;
+  }
 }
 
 String _formatDate(DateTime date) {
