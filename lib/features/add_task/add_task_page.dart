@@ -51,7 +51,7 @@ class AddTaskPage extends GetView<AddTaskController> {
       final selectedCategory = controller.selectedCategory.value;
 
       return Scaffold(
-        appBar: AppBar(title: Text(isEditMode ? 'Edit Task' : 'Add Task')),
+        appBar: AppBar(title: Text(isEditMode ? 'Edit Task' : 'Add Task'),surfaceTintColor: Colors.transparent,),
         body: SafeArea(
           top: false,
           child: SingleChildScrollView(

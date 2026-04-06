@@ -21,6 +21,7 @@ class TaskListPage extends GetView<TaskListController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Task List'),
+        surfaceTintColor: Colors.transparent,
         actions: [
           Obx(
             () => IconButton(
