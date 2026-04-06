@@ -24,63 +24,68 @@ class TaskDetailsPage extends GetView<TaskController> {
 
       return Scaffold(
         appBar: AppBar(title: const Text('Task Details')),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                task.title,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              _DetailRow(label: 'Category', value: task.category.label),
-              const SizedBox(height: 8),
-              _DetailRow(
-                label: 'Status',
-                value: task.isCompleted ? 'Completed' : 'Pending',
-              ),
-              const SizedBox(height: 8),
-              _DetailRow(label: 'Date', value: _formatDate(task.date)),
-              const SizedBox(height: 16),
-              Text(
-                'Description',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                task.description.isEmpty
-                    ? 'No description added.'
-                    : task.description,
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonal(
-                  onPressed: () => controller.toggleTaskStatus(task.id),
-                  child: Text(
-                    task.isCompleted ? 'Mark as Pending' : 'Mark as Completed',
+        body: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  task.title,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 16),
+                _DetailRow(label: 'Category', value: task.category.label),
+                const SizedBox(height: 8),
+                _DetailRow(
+                  label: 'Status',
+                  value: task.isCompleted ? 'Completed' : 'Pending',
+                ),
+                const SizedBox(height: 8),
+                _DetailRow(label: 'Date', value: _formatDate(task.date)),
+                const SizedBox(height: 16),
+                Text(
+                  'Description',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  task.description.isEmpty
+                      ? 'No description added.'
+                      : task.description,
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonal(
+                    onPressed: () => controller.toggleTaskStatus(task.id),
+                    child: Text(
+                      task.isCompleted
+                          ? 'Mark as Pending'
+                          : 'Mark as Completed',
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () async {
-                    await controller.deleteTask(task.id);
-                    Get.back();
-                    Get.snackbar(
-                      'Deleted',
-                      'Task removed from local storage.',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
-                  child: const Text('Delete Task'),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () async {
+                      await controller.deleteTask(task.id);
+                      Get.back();
+                      Get.snackbar(
+                        'Deleted',
+                        'Task removed from local storage.',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                    },
+                    child: const Text('Delete Task'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
