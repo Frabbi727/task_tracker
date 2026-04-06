@@ -2,22 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
-import '../controllers/task_controller.dart';
-import '../models/task_model.dart';
+import '../../core/models/task_model.dart';
+import 'task_details_controller.dart';
 
-class TaskDetailsPage extends GetView<TaskController> {
+class TaskDetailsPage extends GetView<TaskDetailsController> {
   const TaskDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final taskId = Get.arguments as String?;
-
-    if (taskId == null) {
-      return const _MissingTaskView();
-    }
-
     return Obx(() {
-      final task = controller.findTaskById(taskId);
+      final task = controller.task.value;
 
       if (task == null) {
         return const _MissingTaskView();
@@ -28,8 +22,10 @@ class TaskDetailsPage extends GetView<TaskController> {
           title: const Text('Task Details'),
           actions: [
             IconButton(
-              onPressed: () =>
-                  Get.toNamed(AppRoutes.addTask, arguments: task.id),
+              onPressed: () async {
+                await Get.toNamed(AppRoutes.addTask, arguments: task.id);
+                controller.loadTask(task.id);
+              },
               icon: const Icon(Icons.edit),
               tooltip: 'Edit task',
             ),
@@ -69,7 +65,7 @@ class TaskDetailsPage extends GetView<TaskController> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.tonal(
-                    onPressed: () => controller.toggleTaskStatus(task.id),
+                    onPressed: controller.toggleTaskStatus,
                     child: Text(
                       task.status == 'COMPLETED'
                           ? 'Mark as Pending'
@@ -109,7 +105,7 @@ class TaskDetailsPage extends GetView<TaskController> {
                         return;
                       }
 
-                      await controller.deleteTask(task.id);
+                      await controller.deleteTask();
                       Get.back();
                       Get.snackbar(
                         'Deleted',

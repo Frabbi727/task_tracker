@@ -1,18 +1,16 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import 'package:task_tracker/features/tasks/controllers/task_controller.dart';
-import 'package:task_tracker/features/tasks/models/status_response.dart';
-import 'package:task_tracker/features/tasks/models/task_model.dart';
-import 'package:task_tracker/features/tasks/pages/add_task_page.dart';
-import 'package:task_tracker/features/tasks/repositories/status_repository.dart';
-import 'package:task_tracker/features/tasks/repositories/task_repository.dart';
+import 'package:task_tracker/core/models/status_response.dart';
+import 'package:task_tracker/core/models/task_model.dart';
+import 'package:task_tracker/features/add_task/add_task_controller.dart';
+import 'package:task_tracker/features/add_task/add_task_page.dart';
+import 'package:task_tracker/features/repositories/task_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -104,6 +102,8 @@ void main() {
   });
 
   group('AddTaskPage', () {
+    late TaskRepositoryTestable repository;
+
     setUp(() async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (methodCall) async {
@@ -119,9 +119,8 @@ void main() {
       await GetStorage.init('test_box');
       await GetStorage('test_box').erase();
       Get.reset();
-      Get.put<TaskController>(
-        TaskController(TaskRepositoryTestable(), FakeStatusRepository()),
-      );
+      repository = TaskRepositoryTestable();
+      Get.put<AddTaskController>(AddTaskController(repository));
     });
 
     tearDown(() {
@@ -159,7 +158,7 @@ void main() {
     });
 
     test('saves with valid title and empty description', () async {
-      final controller = Get.find<TaskController>();
+      final controller = Get.find<AddTaskController>();
 
       await controller.addTask(
         title: 'New task',
@@ -169,26 +168,18 @@ void main() {
         category: TaskCategory.general,
       );
 
-      expect(controller.tasks, hasLength(1));
-      expect(controller.tasks.first.title, 'New task');
-      expect(controller.tasks.first.description, isEmpty);
-      expect(controller.tasks.first.priority, 'Medium');
-      expect(controller.tasks.first.category, TaskCategory.general);
+      final tasks = repository.loadTasks();
+      expect(tasks, hasLength(1));
+      expect(tasks.first.title, 'New task');
+      expect(tasks.first.description, isEmpty);
+      expect(tasks.first.priority, 'Medium');
+      expect(tasks.first.category, TaskCategory.general);
     });
   });
 }
 
 class TaskRepositoryTestable extends TaskRepository {
   TaskRepositoryTestable() : super.test(GetStorage('test_box'));
-}
-
-class FakeStatusRepository extends StatusRepository {
-  FakeStatusRepository() : super(Dio());
-
-  @override
-  Future<List<String>> fetchStatuses() async {
-    return ['PENDING', 'COMPLETED'];
-  }
 }
 
 String _formatDate(DateTime date) {

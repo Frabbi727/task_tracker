@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../controllers/task_controller.dart';
-import '../models/task_model.dart';
+import '../../core/models/task_model.dart';
+import 'add_task_controller.dart';
 
 class AddTaskPage extends StatefulWidget {
   const AddTaskPage({super.key});
@@ -15,7 +15,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final TaskController _taskController = Get.find<TaskController>();
+  final AddTaskController _taskController = Get.find<AddTaskController>();
 
   TaskModel? _existingTask;
   DateTime _selectedDate = _dateOnly(DateTime.now());

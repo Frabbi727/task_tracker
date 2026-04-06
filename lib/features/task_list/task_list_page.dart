@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
-import '../controllers/task_controller.dart';
-import '../widgets/task_card.dart';
-import '../widgets/task_filter_section.dart';
+import '../../utils/widgets/task_card.dart';
+import '../../utils/widgets/task_filter_section.dart';
+import 'task_list_controller.dart';
 
-class TaskListPage extends GetView<TaskController> {
+class TaskListPage extends GetView<TaskListController> {
   const TaskListPage({super.key});
 
   @override
@@ -76,10 +76,13 @@ class TaskListPage extends GetView<TaskController> {
                     final task = tasks[index];
                     return TaskCard(
                       task: task,
-                      onTap: () => Get.toNamed(
-                        AppRoutes.taskDetails,
-                        arguments: task.id,
-                      ),
+                      onTap: () async {
+                        await Get.toNamed(
+                          AppRoutes.taskDetails,
+                          arguments: task.id,
+                        );
+                        controller.loadTasks();
+                      },
                     );
                   },
                 );
@@ -89,7 +92,10 @@ class TaskListPage extends GetView<TaskController> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed(AppRoutes.addTask),
+        onPressed: () async {
+          await Get.toNamed(AppRoutes.addTask);
+          controller.loadTasks();
+        },
         child: const Icon(Icons.add),
       ),
     );

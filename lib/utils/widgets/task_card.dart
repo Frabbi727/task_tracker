@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/task_model.dart';
+import '../../core/models/task_model.dart';
 
 class TaskCard extends StatelessWidget {
   const TaskCard({super.key, required this.task, required this.onTap});
