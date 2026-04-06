@@ -25,12 +25,20 @@ class TaskTrackerApp extends StatelessWidget {
         themeMode: themeController.themeMode.value,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+          ),
           useMaterial3: true,
         ),
         darkTheme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.blue,
             brightness: Brightness.dark,
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF121212),
+            foregroundColor: Colors.white,
           ),
           useMaterial3: true,
         ),

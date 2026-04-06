@@ -13,6 +13,9 @@ class TaskListPage extends GetView<TaskListController> {
   @override
   Widget build(BuildContext context) {
     final themeController = Get.find<ThemeController>();
+    final iconColor =
+        Theme.of(context).appBarTheme.foregroundColor ??
+        Theme.of(context).colorScheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
@@ -25,6 +28,7 @@ class TaskListPage extends GetView<TaskListController> {
                 themeController.isDarkMode
                     ? Icons.light_mode_outlined
                     : Icons.dark_mode_outlined,
+                color: iconColor,
               ),
               tooltip: themeController.isDarkMode
                   ? 'Switch to light mode'
