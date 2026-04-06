@@ -4,102 +4,39 @@ import 'package:get/get.dart';
 import '../../core/models/task_model.dart';
 import 'add_task_controller.dart';
 
-class AddTaskPage extends StatefulWidget {
+class AddTaskPage extends GetView<AddTaskController> {
   const AddTaskPage({super.key});
 
-  @override
-  State<AddTaskPage> createState() => _AddTaskPageState();
-}
-
-class _AddTaskPageState extends State<AddTaskPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final AddTaskController _taskController = Get.find<AddTaskController>();
-
-  TaskModel? _existingTask;
-  DateTime _selectedDate = _dateOnly(DateTime.now());
-  TaskPriority _selectedPriority = TaskPriority.medium;
-  TaskCategory _selectedCategory = TaskCategory.general;
-
-  bool get _isEditMode => _existingTask != null;
-
-  @override
-  void initState() {
-    super.initState();
-    final taskId = Get.arguments as String?;
-    if (taskId == null) {
-      return;
-    }
-
-    final task = _taskController.findTaskById(taskId);
-    if (task == null) {
-      return;
-    }
-
-    _existingTask = task;
-    _titleController.text = task.title;
-    _descriptionController.text = task.description;
-    _selectedDate = _dateOnly(task.date);
-    _selectedPriority = TaskPriorityX.fromValue(task.priority);
-    _selectedCategory = task.category;
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
+  Future<void> _pickDate(BuildContext context) async {
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: controller.selectedDate.value,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
 
     if (pickedDate != null) {
-      setState(() {
-        _selectedDate = _dateOnly(pickedDate);
-      });
+      controller.updateDate(pickedDate);
     }
   }
 
-  Future<void> _saveTask() async {
-    if (!_formKey.currentState!.validate()) {
+  Future<void> _saveTask(BuildContext context) async {
+    await controller.saveTask();
+
+    if (!context.mounted) {
       return;
     }
 
-    if (_isEditMode) {
-      await _taskController.updateTask(
-        taskId: _existingTask!.id,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        date: _selectedDate,
-        priority: _selectedPriority.value,
-        category: _selectedCategory,
-      );
-    } else {
-      await _taskController.addTask(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        date: _selectedDate,
-        priority: _selectedPriority.value,
-        category: _selectedCategory,
-      );
-    }
-
-    if (!mounted) {
+    if (!controller.formKey.currentState!.validate()) {
       return;
     }
 
+    final isEditMode = controller.isEditMode;
     Get.back();
     if (!Get.testMode) {
       Get.snackbar(
         'Success',
-        _isEditMode ? 'Task updated locally.' : 'Task saved locally.',
+        isEditMode ? 'Task updated locally.' : 'Task saved locally.',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -107,122 +44,111 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(_isEditMode ? 'Edit Task' : 'Add Task')),
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  key: const Key('task_title_field'),
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    border: OutlineInputBorder(),
+    return Obx(() {
+      final isEditMode = controller.isEditMode;
+      final selectedDate = controller.selectedDate.value;
+      final selectedPriority = controller.selectedPriority.value;
+      final selectedCategory = controller.selectedCategory.value;
+
+      return Scaffold(
+        appBar: AppBar(title: Text(isEditMode ? 'Edit Task' : 'Add Task')),
+        body: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: controller.formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    key: const Key('task_title_field'),
+                    controller: controller.titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Title',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Title is required';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Title is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: controller.descriptionController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Description',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  key: const Key('task_date_tile'),
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Task Date'),
-                  subtitle: Text(_formatDate(_selectedDate)),
-                  trailing: const Icon(Icons.calendar_month),
-                  onTap: _pickDate,
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<TaskPriority>(
-                  initialValue: _selectedPriority,
-                  decoration: const InputDecoration(
-                    labelText: 'Priority',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    key: const Key('task_date_tile'),
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Task Date'),
+                    subtitle: Text(_formatDate(selectedDate)),
+                    trailing: const Icon(Icons.calendar_month),
+                    onTap: () => _pickDate(context),
                   ),
-                  items: TaskPriority.values
-                      .map(
-                        (priority) => DropdownMenuItem<TaskPriority>(
-                          value: priority,
-                          child: Text(priority.value),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedPriority = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<TaskCategory>(
-                  initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<TaskPriority>(
+                    initialValue: selectedPriority,
+                    decoration: const InputDecoration(
+                      labelText: 'Priority',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: TaskPriority.values
+                        .map(
+                          (priority) => DropdownMenuItem<TaskPriority>(
+                            value: priority,
+                            child: Text(priority.value),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: controller.updatePriority,
                   ),
-                  items: TaskCategory.values
-                      .map(
-                        (category) => DropdownMenuItem<TaskCategory>(
-                          value: category,
-                          child: Text(category.label),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    key: const Key('task_save_button'),
-                    onPressed: _saveTask,
-                    child: Text(_isEditMode ? 'Update Task' : 'Save Task'),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<TaskCategory>(
+                    initialValue: selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Category',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: TaskCategory.values
+                        .map(
+                          (category) => DropdownMenuItem<TaskCategory>(
+                            value: category,
+                            child: Text(category.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: controller.updateCategory,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      key: const Key('task_save_button'),
+                      onPressed: () => _saveTask(context),
+                      child: Text(isEditMode ? 'Update Task' : 'Save Task'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   String _formatDate(DateTime date) {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '${date.year}-$month-$day';
-  }
-
-  static DateTime _dateOnly(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
   }
 }

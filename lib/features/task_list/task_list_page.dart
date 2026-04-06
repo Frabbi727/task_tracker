@@ -43,13 +43,6 @@ class TaskListPage extends GetView<TaskListController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Track work with clearer priorities, categories, and status.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
             TextField(
               onChanged: controller.updateSearchQuery,
               decoration: InputDecoration(
